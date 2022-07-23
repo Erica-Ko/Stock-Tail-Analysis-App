@@ -26,6 +26,8 @@ def pdf(taget_se, bin_size):
         return
     min_edge = taget_se.min()
     max_edge = taget_se.max()
+    if len(set([min_edge,max_edge])) == 1: # Cater for bott values are NaN values as well
+        raise ValueError('The bin edges are the same, it means the target series only has 1 unique value')
     bin = np.linspace(min_edge, max_edge, bin_size)
     count = pd.value_counts(pd.cut(taget_se, bin)).sort_index()
     pdf_se = count/count.sum()

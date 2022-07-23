@@ -51,10 +51,8 @@ st.download_button('Download CSV', convert_df(data), f'{ticker}_{start_date_file
 # Data display
 st.dataframe(data, width=1000, height=250)
 
-### Distribution Plot ###
-toc.subheader("Distribution plot")
-number_of_lag = st.slider("Number of lag: ", 1, 50)
-target_series = st.selectbox('Target series: ',data.columns)
+### Parameters setting ###
+toc.subheader("Parameters setting")
 
 def get_lag_return(target_se, number_of_lag):
     return_data = target_se.pct_change(periods = number_of_lag, fill_method=None) # for (pt - pt-1)/pt-1
@@ -75,14 +73,18 @@ def plot_distribution(series,number_of_lag, plot_title):
     ax.set_title(plot_title)
     st.pyplot(fig)
 
-return_series = get_lag_return(data[target_series], number_of_lag)
-price_diff_series = get_lag_price_diff(data[target_series], number_of_lag)
+number_of_lag = st.slider("Number of lag: ", 1, 50)
+price_series = st.selectbox('Select price series for analysis: ',data.columns)
+return_series = get_lag_return(data[price_series], number_of_lag)
+price_diff_series = get_lag_price_diff(data[price_series], number_of_lag)
+target_series_name = st.selectbox('Series for producing graphs: ',('Price Change', 'Return'))
+target_series = price_diff_series if target_series_name == 'Price Change' else return_series
 
-if st.checkbox("Show return distribution plot", False):
-    plot_distribution(return_series,number_of_lag, f'Return distribution from {start_date} to {end_date}')
+### Distribution Plot ###
+toc.subheader("Distribution plot")
 
-if st.checkbox("Show price difference distribution plot", False):
-    plot_distribution(price_diff_series,number_of_lag, f'Return distribution from {start_date} to {end_date}')
+if st.checkbox("Show distribution plot", False):
+    plot_distribution(target_series,number_of_lag, f'{target_series_name} distribution from {start_date} to {end_date}')
 
 ### Tail Analysis ###
 toc.subheader("Tail Analysis")
@@ -96,13 +98,14 @@ except ValueError as ve:
 
 if st.checkbox("Show Ln-Ln plot", False):
 ### Tail Analysis - Plotting ###
-    pdf_se = ta.pdf(return_series, nb_bin)
-    if tail_side == 'LEFT':
-        ex_se = ta.left_tail_exceedance(pdf_se)
-    else:
-        ex_se = ta.right_tail_exceedance(pdf_se)
-
     try:
+        pdf_se = ta.pdf(target_series, nb_bin)
+
+        if tail_side == 'LEFT':
+            ex_se = ta.left_tail_exceedance(pdf_se)
+        else:
+            ex_se = ta.right_tail_exceedance(pdf_se)
+
         normalise_se, cutoff_x = ta.normalised_exceedence(ex_se, 0.05)
         ln_ln_se = ta.ln_ln_se(normalise_se[normalise_se.index>0])
         ln_ln_se = ta.remove_inf_nan(ln_ln_se)
@@ -115,7 +118,9 @@ if st.checkbox("Show Ln-Ln plot", False):
         st.pyplot(fig)
     except IndexError:
         st.write('Please try to increase the number of bins, there is no tail part can be extracted')
-
+    except ValueError as ve:
+        st.write(getattr(ve, 'message', repr(ve)))
+    
 ### Tail Analysis - Slope calculation ###
 
 
