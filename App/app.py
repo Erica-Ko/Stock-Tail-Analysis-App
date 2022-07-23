@@ -8,7 +8,7 @@ import seaborn as sns
 import datetime
 import tail_analysis as ta
 
-st.set_page_config(page_title='StockTail')
+st.set_page_config(page_title='StockTail',initial_sidebar_state='collapsed')
 st.title("Live Stock Return Tail Analysis")
 st.markdown("This dashboard can be used for different stocks tail analysis")
 
